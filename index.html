@@ -621,6 +621,35 @@ th {
     margin-top: 10px;
 }
 
+.bundle-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.bundle-form-grid select,
+.bundle-form-grid input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+}
+
+.bundle-rule-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bundle-rule-row:last-child { border-bottom: 0; }
+.bundle-rule-description { min-width: 0; }
+
 .product-admin-row {
     display: grid;
 
@@ -909,6 +938,18 @@ th {
 
     .product-admin-row button {
         width: 100%;
+    }
+
+    .bundle-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .bundle-rule-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .bundle-rule-row .bundle-delete {
+        grid-column: 2;
     }
 
     .stats-grid {
@@ -1385,6 +1426,18 @@ th {
 
             </div>
 
+            <div class="form-group">
+                <label>初期在庫数（個）</label>
+                <input
+                    id="productStock"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="例：100"
+                >
+            </div>
+
 
             <button
                 class="primary-button"
@@ -1412,6 +1465,22 @@ th {
             class="product-admin-list"
         ></div>
 
+    </div>
+
+    <br>
+
+    <div class="panel">
+        <h2 class="panel-title">セット割引の設定</h2>
+        <p>異なる商品を組み合わせて購入したときのセット価格を設定できます。例：お茶150円＋フランクフルト300円をセットで400円。</p>
+        <div class="bundle-form-grid">
+            <div class="form-group"><label>商品A</label><select id="bundleProductA"></select></div>
+            <div class="form-group"><label>商品Aの数量</label><input id="bundleQtyA" type="number" min="1" step="1" value="1"></div>
+            <div class="form-group"><label>商品B</label><select id="bundleProductB"></select></div>
+            <div class="form-group"><label>商品Bの数量</label><input id="bundleQtyB" type="number" min="1" step="1" value="1"></div>
+            <div class="form-group"><label>セット価格（円）</label><input id="bundlePrice" type="number" min="0" step="1" inputmode="numeric" placeholder="例：400"></div>
+            <button class="primary-button" onclick="addBundleRule()">セット割引を追加</button>
+        </div>
+        <div id="bundleRuleList" class="product-admin-list"></div>
     </div>
 
 </section>
@@ -1646,6 +1715,18 @@ th {
 
             </div>
 
+            <div>
+                <label>在庫数（個）</label>
+                <input
+                    id="editProductStock"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="例：100"
+                >
+            </div>
+
         </div>
 
 
@@ -1736,6 +1817,8 @@ let state = {
     */
     cart: [],
 
+    bundleRules: [],
+
     cashReceived: "",
 
     sales: [],
@@ -1796,6 +1879,8 @@ function init() {
     renderSales();
 
     renderProductAdmin();
+
+    renderBundleRules();
 
     renderOpeningMoney();
 
@@ -1925,6 +2010,17 @@ function loadState() {
             state.sales = [];
 
         }
+
+        if (!Array.isArray(state.bundleRules)) {
+            state.bundleRules = [];
+        }
+
+        // 以前のデータには在庫数がないため、未設定として扱います。
+        // 厳密な在庫管理のため、商品管理で在庫を登録するまでは販売できません。
+        state.products = state.products.map(product => ({
+            ...product,
+            stock: Number.isInteger(product.stock) && product.stock >= 0 ? product.stock : null
+        }));
 
 
         if (
@@ -2094,48 +2190,27 @@ function updateHeaderDate() {
 
 function renderProducts() {
 
-    const container =
-        document.getElementById(
-            "productButtons"
-        );
-
+    const container = document.getElementById("productButtons");
 
     if (state.products.length === 0) {
-
-        container.innerHTML = `
-            <div class="empty-cart">
-                商品が登録されていません。
-            </div>
-        `;
-
+        container.innerHTML = `<div class="empty-cart">商品が登録されていません。</div>`;
         return;
-
     }
 
-
-    container.innerHTML =
-        state.products
-            .map(product => `
-
-                <button
-                    class="product-button"
-                    style="background:${escapeHTML(product.color)}"
-                    onclick="addToCart('${product.id}')"
-                >
-
-                    <span class="product-name">
-                        ${escapeHTML(product.name)}
-                    </span>
-
-                    <span class="product-price">
-                        ${yen(product.price)}
-                    </span>
-
-                </button>
-
-            `)
-            .join("");
-
+    container.innerHTML = state.products.map(product => {
+        const cartItem = state.cart.find(item => item.productId === product.id);
+        const inCart = cartItem ? cartItem.quantity : 0;
+        const stockUnset = product.stock === null || product.stock === undefined;
+        const remaining = stockUnset ? 0 : product.stock - inCart;
+        const disabled = stockUnset || remaining <= 0;
+        return `
+            <button class="product-button" style="background:${escapeHTML(product.color)}" onclick="addToCart('${product.id}')" ${disabled ? "disabled" : ""}>
+                <span class="product-name">${escapeHTML(product.name)}</span>
+                <span class="product-price">${yen(product.price)}</span>
+                <span style="display:block;font-size:12px;margin-top:5px;opacity:.9">${stockUnset ? "在庫未設定" : `在庫 ${Math.max(0, remaining)}個`}${disabled && !stockUnset ? "・在庫切れ" : ""}</span>
+            </button>
+        `;
+    }).join("");
 }
 
 
@@ -2144,97 +2219,41 @@ function renderProducts() {
 ===================================================== */
 
 function addToCart(productId) {
-
-    const product =
-        state.products.find(
-            product =>
-                product.id === productId
-        );
-
-
-    if (!product) {
-
+    const product = state.products.find(product => product.id === productId);
+    if (!product) return;
+    if (!Number.isInteger(product.stock) || product.stock < 0) {
+        alert(`「${product.name}」の在庫数が未設定です。商品管理から在庫数を登録してください。`);
         return;
-
     }
-
-
-    const existing =
-        state.cart.find(
-            item =>
-                item.productId ===
-                productId
-        );
-
-
-    if (existing) {
-
-        existing.quantity++;
-
-    } else {
-
-        state.cart.push({
-
-            productId,
-
-            quantity: 1
-
-        });
-
+    const existing = state.cart.find(item => item.productId === productId);
+    const inCart = existing ? existing.quantity : 0;
+    if (inCart >= product.stock) {
+        alert(`「${product.name}」の在庫が不足しています。`);
+        return;
     }
-
-
-    /*
-       商品を追加した時点で保存
-    */
-
+    if (existing) existing.quantity++;
+    else state.cart.push({ productId, quantity: 1 });
     saveState();
-
-
+    renderProducts();
     renderCart();
-
 }
 
 
-function changeQuantity(
-    productId,
-    amount
-) {
-
-    const item =
-        state.cart.find(
-            item =>
-                item.productId ===
-                productId
-        );
-
-
-    if (!item) {
-
-        return;
-
+function changeQuantity(productId, amount) {
+    const item = state.cart.find(item => item.productId === productId);
+    if (!item) return;
+    if (amount > 0) {
+        const product = state.products.find(product => product.id === productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity >= product.stock) {
+            alert("在庫数を超えて追加することはできません。");
+            return;
+        }
     }
-
-
     item.quantity += amount;
-
-
-    if (item.quantity <= 0) {
-
-        state.cart =
-            state.cart.filter(
-                item =>
-                    item.productId !==
-                    productId
-            );
-
-    }
-
-
+    if (item.quantity <= 0) state.cart = state.cart.filter(item => item.productId !== productId);
     saveState();
-
+    renderProducts();
     renderCart();
-
 }
 
 
@@ -2294,150 +2313,112 @@ function clearCart() {
 }
 
 
+function getCartCalculation() {
+    const quantities = {};
+    const productsById = {};
+    const lineTotals = {};
+    const lineDiscounts = {};
+    state.cart.forEach(item => {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product) return;
+        quantities[item.productId] = item.quantity;
+        productsById[item.productId] = product;
+        lineTotals[item.productId] = product.price * item.quantity;
+        lineDiscounts[item.productId] = 0;
+    });
+
+    let bundleDiscount = 0;
+    const appliedBundles = [];
+    state.bundleRules.forEach(rule => {
+        const productA = productsById[rule.productAId];
+        const productB = productsById[rule.productBId];
+        if (!productA || !productB || productA.id === productB.id) return;
+        const qtyA = Math.max(1, Number(rule.qtyA) || 1);
+        const qtyB = Math.max(1, Number(rule.qtyB) || 1);
+        const possible = Math.min(
+            Math.floor((quantities[productA.id] || 0) / qtyA),
+            Math.floor((quantities[productB.id] || 0) / qtyB)
+        );
+        if (possible <= 0) return;
+        const regular = (productA.price * qtyA + productB.price * qtyB) * possible;
+        const discount = Math.max(0, regular - Number(rule.bundlePrice) * possible);
+        if (discount <= 0) return;
+
+        // このルールで使う数量を先に確保し、同じ商品を別ルールで二重割引しない
+        quantities[productA.id] -= qtyA * possible;
+        quantities[productB.id] -= qtyB * possible;
+        const regularA = productA.price * qtyA * possible;
+        const regularB = productB.price * qtyB * possible;
+        const bundleTotal = Number(rule.bundlePrice) * possible;
+        const allocatedA = regular > 0 ? Math.round(bundleTotal * regularA / regular) : 0;
+        const allocatedB = bundleTotal - allocatedA;
+        lineTotals[productA.id] -= regularA;
+        lineTotals[productB.id] -= regularB;
+        lineTotals[productA.id] += allocatedA;
+        lineTotals[productB.id] += allocatedB;
+        lineDiscounts[productA.id] += regularA - allocatedA;
+        lineDiscounts[productB.id] += regularB - allocatedB;
+        bundleDiscount += discount;
+        appliedBundles.push({
+            ruleId: rule.id,
+            label: `${productA.name} × ${qtyA} ＋ ${productB.name} × ${qtyB}`,
+            bundles: possible,
+            bundlePrice: Number(rule.bundlePrice),
+            discount
+        });
+    });
+
+    const items = state.cart.map(item => {
+        const product = productsById[item.productId];
+        if (!product) return null;
+        const regularSubtotal = product.price * item.quantity;
+        return {
+            productId: product.id, name: product.name, price: product.price, quantity: item.quantity,
+            subtotal: lineTotals[product.id] ?? regularSubtotal, regularSubtotal,
+            discount: lineDiscounts[product.id] || 0
+        };
+    }).filter(Boolean);
+    const subtotal = items.reduce((sum, item) => sum + item.regularSubtotal, 0);
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    return { subtotal, total, discount: subtotal - total, items, appliedBundles };
+}
+
 function getCartTotal() {
-
-    return state.cart.reduce(
-        (
-            total,
-            item
-        ) => {
-
-            const product =
-                state.products.find(
-                    product =>
-                        product.id ===
-                        item.productId
-                );
-
-
-            if (!product) {
-
-                return total;
-
-            }
-
-
-            return (
-                total +
-                product.price *
-                item.quantity
-            );
-
-        },
-        0
-    );
-
+    return getCartCalculation().total;
 }
 
 
 function renderCart() {
-
-    const container =
-        document.getElementById(
-            "cartList"
-        );
-
-
+    const container = document.getElementById("cartList");
     if (state.cart.length === 0) {
-
-        container.innerHTML = `
-            <div class="empty-cart">
-                商品を選択してください
-            </div>
-        `;
-
+        container.innerHTML = `<div class="empty-cart">商品を選択してください</div>`;
     } else {
-
-        container.innerHTML =
-            state.cart
-                .map(item => {
-
-                    const product =
-                        state.products.find(
-                            product =>
-                                product.id ===
-                                item.productId
-                        );
-
-
-                    if (!product) {
-
-                        return "";
-
-                    }
-
-
-                    const subtotal =
-                        product.price *
-                        item.quantity;
-
-
-                    return `
-
-                        <div class="cart-item">
-
-                            <div>
-
-                                <div class="cart-item-name">
-                                    ${escapeHTML(product.name)}
-                                </div>
-
-                                <div class="cart-item-price">
-                                    ${yen(product.price)}
-                                    ×
-                                    ${item.quantity}
-                                    ＝
-                                    ${yen(subtotal)}
-                                </div>
-
-                            </div>
-
-
-                            <div class="quantity-controls">
-
-                                <button
-                                    onclick="changeQuantity('${product.id}', -1)"
-                                >
-                                    −
-                                </button>
-
-                                <span class="quantity">
-                                    ${item.quantity}
-                                </span>
-
-                                <button
-                                    onclick="changeQuantity('${product.id}', 1)"
-                                >
-                                    ＋
-                                </button>
-
-                                <button
-                                    class="delete"
-                                    onclick="removeFromCart('${product.id}')"
-                                >
-                                    ×
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    `;
-
-                })
-                .join("");
-
+        const calculation = getCartCalculation();
+        container.innerHTML = state.cart.map(item => {
+            const product = state.products.find(product => product.id === item.productId);
+            if (!product) return "";
+            const line = calculation.items.find(row => row.productId === product.id);
+            return `
+                <div class="cart-item">
+                    <div>
+                        <div class="cart-item-name">${escapeHTML(product.name)}</div>
+                        <div class="cart-item-price">${yen(product.price)} × ${item.quantity} ＝ ${yen(line ? line.subtotal : product.price * item.quantity)}${line && line.discount ? `<br><span style="color:#b45309">セット割引適用</span>` : ""}</div>
+                    </div>
+                    <div class="quantity-controls">
+                        <button onclick="changeQuantity('${product.id}', -1)">−</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button onclick="changeQuantity('${product.id}', 1)">＋</button>
+                        <button class="delete" onclick="removeFromCart('${product.id}')">×</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+        if (calculation.appliedBundles.length) {
+            container.innerHTML += `<div style="padding:10px 0;color:#92400e;font-size:13px">${calculation.appliedBundles.map(b => `${escapeHTML(b.label)}：${b.bundles}セット適用（割引 −${yen(b.discount)}）`).join("<br>")}</div>`;
+        }
     }
-
-
-    document.getElementById(
-        "cartTotal"
-    ).textContent =
-        yen(getCartTotal());
-
-
+    document.getElementById("cartTotal").textContent = yen(getCartTotal());
     updateChange();
-
 }
 
 
@@ -2578,39 +2559,25 @@ function confirmSale() {
 
 
     if (received < total) {
-
-        alert(
-            "受取金額が不足しています。"
-        );
-
+        alert("受取金額が不足しています。");
         return;
-
     }
 
+    for (const item of state.cart) {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity > product.stock) {
+            alert(`「${product ? product.name : "商品"}」の在庫が不足しているか、在庫数が未設定です。商品管理を確認してください。`);
+            return;
+        }
+    }
 
     const change =
         received - total;
 
 
-    const details =
-        state.cart
-            .map(item => {
-
-                const product =
-                    state.products.find(
-                        product =>
-                            product.id ===
-                            item.productId
-                    );
-
-
-                return `
-                    ${escapeHTML(product.name)}
-                    × ${item.quantity}
-                `;
-
-            })
-            .join("<br>");
+    const calculation = getCartCalculation();
+    const details = calculation.items.map(item => `${escapeHTML(item.name)} × ${item.quantity}`).join("<br>") +
+        (calculation.appliedBundles.length ? "<br><br>セット割引：<br>" + calculation.appliedBundles.map(bundle => `${escapeHTML(bundle.label)} × ${bundle.bundles}セット（−${yen(bundle.discount)}）`).join("<br>") : "");
 
 
     openConfirm(
@@ -2658,120 +2625,38 @@ function confirmSale() {
 
 
 function completeSale() {
+    const calculation = getCartCalculation();
+    const total = calculation.total;
+    const received = Number(document.getElementById("cashReceived").value) || 0;
+    if (total <= 0 || received < total) return;
 
-    const total =
-        getCartTotal();
-
-
-    const received =
-        Number(
-            document.getElementById(
-                "cashReceived"
-            ).value
-        ) || 0;
-
-
-    if (
-        total <= 0 ||
-        received < total
-    ) {
-
-        return;
-
+    // 確認ダイアログを開いている間に在庫が変更されていないか再確認
+    for (const item of state.cart) {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity > product.stock) {
+            alert(`「${product ? product.name : "商品"}」の在庫が不足しているため、会計を確定できません。`);
+            renderProducts(); renderCart(); return;
+        }
     }
 
-
-    const change =
-        received - total;
-
-
-    const items =
-        state.cart.map(item => {
-
-            const product =
-                state.products.find(
-                    product =>
-                        product.id ===
-                        item.productId
-                );
-
-
-            return {
-
-                productId:
-                    product.id,
-
-                name:
-                    product.name,
-
-                price:
-                    product.price,
-
-                quantity:
-                    item.quantity,
-
-                subtotal:
-                    product.price *
-                    item.quantity
-
-            };
-
-        });
-
-
+    const change = received - total;
+    const items = calculation.items.map(item => ({...item}));
+    state.cart.forEach(item => {
+        const product = state.products.find(product => product.id === item.productId);
+        product.stock -= item.quantity;
+    });
     state.sales.push({
-
-        id:
-            createId(),
-
-        date:
-            new Date().toISOString(),
-
-        items,
-
-        total,
-
-        received,
-
-        change,
-
-        cancelled:
-            false
-
+        id: createId(), date: new Date().toISOString(), items,
+        bundles: calculation.appliedBundles, subtotal: calculation.subtotal,
+        discount: calculation.discount, total, received, change, cancelled: false
     });
 
-
-    /*
-       会計完了後は
-       途中データをクリア
-    */
-
     state.cart = [];
-
     state.cashReceived = "";
-
-
-    document.getElementById(
-        "cashReceived"
-    ).value = "";
-
-
+    document.getElementById("cashReceived").value = "";
     saveState();
-
-
-    renderCart();
-
-    renderSales();
-
-    renderCurrentMoney();
-
-
-    alert(
-        `会計完了\n\n` +
-        `合計：${yen(total)}\n` +
-        `おつり：${yen(change)}`
-    );
-
+    renderProducts(); renderCart(); renderProductAdmin(); renderSales(); renderCurrentMoney();
+    alert(`会計完了\n\n合計：${yen(total)}\nおつり：${yen(change)}`);
 }
 
 
@@ -3206,11 +3091,16 @@ function confirmCancelSale(
         `,
         function() {
 
-            sale.cancelled =
-                true;
-
+            sale.cancelled = true;
+            // 取消した会計の商品在庫を戻す
+            sale.items.forEach(item => {
+                const product = state.products.find(product => product.id === item.productId);
+                if (product && Number.isInteger(product.stock)) product.stock += item.quantity;
+            });
 
             saveState();
+            renderProducts();
+            renderProductAdmin();
 
 
             renderSales();
@@ -3340,10 +3230,9 @@ function addProduct() {
         );
 
 
-    const color =
-        document.getElementById(
-            "productColor"
-        ).value;
+    const color = document.getElementById("productColor").value;
+    const stockRaw = document.getElementById("productStock").value.trim();
+    const stock = Number(stockRaw);
 
 
     if (!name) {
@@ -3371,18 +3260,13 @@ function addProduct() {
     }
 
 
+    if (stockRaw === "" || !Number.isInteger(stock) || stock < 0) {
+        alert("初期在庫数を0以上の整数で入力してください。");
+        return;
+    }
+
     state.products.push({
-
-        id:
-            createId(),
-
-        name,
-
-        price:
-            Math.floor(price),
-
-        color
-
+        id: createId(), name, price: Math.floor(price), color, stock
     });
 
 
@@ -3394,14 +3278,12 @@ function addProduct() {
     ).value = "";
 
 
-    document.getElementById(
-        "productPrice"
-    ).value = "";
-
+    document.getElementById("productPrice").value = "";
+    document.getElementById("productStock").value = "";
 
     renderProducts();
-
     renderProductAdmin();
+    renderBundleRules();
 
 }
 
@@ -3452,13 +3334,8 @@ function renderProductAdmin() {
 
 
                     <div>
-
-                        <strong>
-                            ${escapeHTML(
-                                product.name
-                            )}
-                        </strong>
-
+                        <strong>${escapeHTML(product.name)}</strong>
+                        <div style="font-size:12px;color:#6b7280;margin-top:3px">在庫：${Number.isInteger(product.stock) ? `${product.stock}個` : "未設定（販売不可）"}</div>
                     </div>
 
 
@@ -3497,6 +3374,56 @@ function renderProductAdmin() {
             `)
             .join("");
 
+}
+
+function renderBundleSelectors() {
+    const options = state.products.map(product => `<option value="${escapeHTML(product.id)}">${escapeHTML(product.name)}</option>`).join("");
+    ["bundleProductA", "bundleProductB"].forEach(id => {
+        const select = document.getElementById(id);
+        const previous = select.value;
+        select.innerHTML = options || `<option value="">商品を登録してください</option>`;
+        if (state.products.some(product => product.id === previous)) select.value = previous;
+    });
+    if (state.products.length > 1 && document.getElementById("bundleProductA").value === document.getElementById("bundleProductB").value) {
+        document.getElementById("bundleProductB").selectedIndex = 1;
+    }
+}
+
+function renderBundleRules() {
+    renderBundleSelectors();
+    const container = document.getElementById("bundleRuleList");
+    if (!state.bundleRules.length) {
+        container.innerHTML = `<p style="color:#9ca3af;padding:10px 0">セット割引はまだ設定されていません。</p>`;
+        return;
+    }
+    container.innerHTML = state.bundleRules.map(rule => {
+        const a = state.products.find(product => product.id === rule.productAId);
+        const b = state.products.find(product => product.id === rule.productBId);
+        return `<div class="bundle-rule-row"><div class="bundle-rule-description"><strong>${escapeHTML(a ? a.name : "削除済み商品")} × ${rule.qtyA} ＋ ${escapeHTML(b ? b.name : "削除済み商品")} × ${rule.qtyB}</strong><div style="font-size:13px;color:#6b7280">セット価格：${yen(rule.bundlePrice)}</div></div><button class="danger-button bundle-delete" onclick="deleteBundleRule('${rule.id}')">削除</button></div>`;
+    }).join("");
+}
+
+function addBundleRule() {
+    const productAId = document.getElementById("bundleProductA").value;
+    const productBId = document.getElementById("bundleProductB").value;
+    const qtyA = Number(document.getElementById("bundleQtyA").value);
+    const qtyB = Number(document.getElementById("bundleQtyB").value);
+    const bundlePrice = Number(document.getElementById("bundlePrice").value);
+    const a = state.products.find(product => product.id === productAId);
+    const b = state.products.find(product => product.id === productBId);
+    if (!a || !b) { alert("商品を2つ以上登録してください。"); return; }
+    if (productAId === productBId) { alert("セット割引には異なる2商品を選んでください。"); return; }
+    if (!Number.isInteger(qtyA) || qtyA < 1 || !Number.isInteger(qtyB) || qtyB < 1 || !Number.isInteger(bundlePrice) || bundlePrice < 0) { alert("数量は1以上の整数、セット価格は0以上の整数で入力してください。"); return; }
+    const regular = a.price * qtyA + b.price * qtyB;
+    if (bundlePrice >= regular) { alert("セット価格は通常合計より安い金額にしてください。"); return; }
+    state.bundleRules.push({ id: createId(), productAId, qtyA, productBId, qtyB, bundlePrice });
+    saveState(); renderBundleRules(); renderCart();
+    document.getElementById("bundlePrice").value = "";
+}
+
+function deleteBundleRule(ruleId) {
+    state.bundleRules = state.bundleRules.filter(rule => rule.id !== ruleId);
+    saveState(); renderBundleRules(); renderCart();
 }
 
 
@@ -3543,10 +3470,8 @@ function openEditProduct(
         product.price;
 
 
-    document.getElementById(
-        "editProductColor"
-    ).value =
-        product.color;
+    document.getElementById("editProductColor").value = product.color;
+    document.getElementById("editProductStock").value = Number.isInteger(product.stock) ? product.stock : "";
 
 
     document.getElementById(
@@ -3617,10 +3542,9 @@ function saveEditedProduct() {
         );
 
 
-    const color =
-        document.getElementById(
-            "editProductColor"
-        ).value;
+    const color = document.getElementById("editProductColor").value;
+    const stockRaw = document.getElementById("editProductStock").value.trim();
+    const stock = Number(stockRaw);
 
 
     if (!name) {
@@ -3648,16 +3572,19 @@ function saveEditedProduct() {
     }
 
 
-    product.name =
-        name;
+    if (stockRaw === "" || !Number.isInteger(stock) || stock < 0) {
+        alert("在庫数を0以上の整数で入力してください。空欄にはできません。");
+        return;
+    }
+    if (state.cart.some(item => item.productId === product.id && item.quantity > stock)) {
+        alert("現在のカート数量より少ない在庫数には変更できません。");
+        return;
+    }
 
-
-    product.price =
-        Math.floor(price);
-
-
-    product.color =
-        color;
+    product.name = name;
+    product.price = Math.floor(price);
+    product.color = color;
+    product.stock = stock;
 
 
     saveState();
@@ -3666,6 +3593,7 @@ function saveEditedProduct() {
     renderProducts();
 
     renderProductAdmin();
+    renderBundleRules();
 
     renderCart();
 
@@ -3750,12 +3678,8 @@ function deleteProduct(
         `,
         function() {
 
-            state.products =
-                state.products.filter(
-                    item =>
-                        item.id !==
-                        productId
-                );
+            state.products = state.products.filter(item => item.id !== productId);
+            state.bundleRules = state.bundleRules.filter(rule => rule.productAId !== productId && rule.productBId !== productId);
 
 
             saveState();
@@ -4473,7 +4397,8 @@ function exportCSV() {
             "商品",
             "数量",
             "単価",
-            "小計",
+            "小計（割引後）",
+            "商品割引額",
             "合計",
             "受取金額",
             "おつり",
@@ -4506,6 +4431,8 @@ function exportCSV() {
                         item.price,
 
                         item.subtotal,
+
+                        item.discount || 0,
 
                         sale.total,
 
