@@ -1,0 +1,4681 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
+<title>大学祭レジ</title>
+
+<style>
+
+/* =====================================================
+   基本
+===================================================== */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    min-height: 100%;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        Meiryo,
+        sans-serif;
+
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+body {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+
+/* =====================================================
+   ヘッダー
+===================================================== */
+
+.header {
+    background: #1f2937;
+    color: white;
+
+    padding:
+        calc(14px + env(safe-area-inset-top))
+        20px
+        14px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.header-sub {
+    margin-top: 3px;
+    color: #d1d5db;
+    font-size: 13px;
+}
+
+#headerDate {
+    font-size: 13px;
+    color: #d1d5db;
+    text-align: right;
+}
+
+
+/* =====================================================
+   全体
+===================================================== */
+
+.container {
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 20px;
+}
+
+
+/* =====================================================
+   タブ
+===================================================== */
+
+.tabs {
+    display: flex;
+
+    gap: 8px;
+
+    margin-bottom: 20px;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab-button {
+    border: 0;
+
+    background: white;
+    color: #374151;
+
+    padding: 13px 22px;
+
+    min-height: 48px;
+
+    border-radius: 10px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 1px 4px rgba(0,0,0,.08);
+}
+
+.tab-button.active {
+    background: #2563eb;
+    color: white;
+}
+
+
+/* =====================================================
+   ページ
+===================================================== */
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+
+/* =====================================================
+   パネル
+===================================================== */
+
+.panel {
+    background: white;
+
+    border-radius: 14px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.08);
+}
+
+.panel-title {
+    margin: 0 0 15px;
+
+    font-size: 19px;
+}
+
+
+/* =====================================================
+   会計
+===================================================== */
+
+.pos-layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        390px;
+
+    gap: 20px;
+}
+
+
+/* 商品 */
+
+.product-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(150px, 1fr));
+
+    gap: 12px;
+}
+
+.product-button {
+    min-height: 110px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    color: white;
+
+    padding: 14px;
+
+    font-weight: bold;
+
+    box-shadow:
+        0 2px 5px rgba(0,0,0,.15);
+
+    transition:
+        transform .08s,
+        opacity .08s;
+}
+
+.product-button:active {
+    transform: scale(.96);
+    opacity: .85;
+}
+
+.product-name {
+    display: block;
+
+    font-size: 17px;
+
+    margin-bottom: 8px;
+}
+
+.product-price {
+    font-size: 15px;
+}
+
+
+/* カート */
+
+.cart-list {
+    max-height: 390px;
+
+    overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.empty-cart {
+    text-align: center;
+
+    color: #9ca3af;
+
+    padding: 35px 10px;
+}
+
+.cart-item {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    gap: 10px;
+
+    padding: 12px 0;
+
+    border-bottom:
+        1px solid #e5e7eb;
+}
+
+.cart-item-name {
+    font-weight: bold;
+}
+
+.cart-item-price {
+    margin-top: 3px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+.quantity-controls {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+.quantity-controls button {
+    width: 38px;
+    height: 38px;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background: #e5e7eb;
+
+    font-size: 20px;
+}
+
+.quantity-controls .delete {
+    background: #fee2e2;
+
+    color: #dc2626;
+
+    font-size: 18px;
+}
+
+.quantity {
+    min-width: 30px;
+
+    text-align: center;
+
+    font-weight: bold;
+}
+
+
+/* 合計 */
+
+.total-box {
+    background: #eff6ff;
+
+    border-radius: 10px;
+
+    padding: 15px;
+
+    margin-top: 15px;
+}
+
+.total-row {
+    display: flex;
+
+    justify-content: space-between;
+}
+
+.total-row.main {
+    font-size: 27px;
+
+    font-weight: bold;
+
+    color: #1d4ed8;
+
+    margin-bottom: 15px;
+}
+
+
+/* 受取 */
+
+.cash-input {
+    width: 100%;
+
+    margin-top: 7px;
+
+    padding: 13px;
+
+    min-height: 58px;
+
+    font-size: 27px;
+
+    border:
+        2px solid #d1d5db;
+
+    border-radius: 10px;
+
+    text-align: right;
+
+    background: white;
+}
+
+.cash-input:focus {
+    outline: none;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37,99,235,.12);
+}
+
+
+/* おつり */
+
+.change-box {
+    margin-top: 12px;
+
+    padding: 15px;
+
+    background: #ecfdf5;
+
+    border-radius: 10px;
+
+    text-align: center;
+}
+
+.change-box.insufficient {
+    background: #fef2f2;
+}
+
+.change-label {
+    color: #047857;
+
+    font-size: 14px;
+}
+
+.change-value {
+    color: #047857;
+
+    font-size: 32px;
+
+    font-weight: bold;
+}
+
+.change-box.insufficient
+.change-label,
+.change-box.insufficient
+.change-value {
+    color: #dc2626;
+}
+
+
+/* =====================================================
+   ボタン
+===================================================== */
+
+.primary-button,
+.secondary-button,
+.danger-button {
+    border: 0;
+
+    border-radius: 9px;
+
+    min-height: 44px;
+
+    padding: 11px 16px;
+
+    font-weight: bold;
+}
+
+.primary-button {
+    background: #2563eb;
+    color: white;
+}
+
+.primary-button:active {
+    background: #1d4ed8;
+}
+
+.primary-button:disabled {
+    background: #9ca3af;
+
+    cursor: not-allowed;
+}
+
+.secondary-button {
+    background: #e5e7eb;
+
+    color: #374151;
+}
+
+.danger-button {
+    background: #dc2626;
+
+    color: white;
+}
+
+.danger-button:active {
+    background: #b91c1c;
+}
+
+.full-button {
+    width: 100%;
+
+    margin-top: 12px;
+}
+
+
+/* =====================================================
+   統計
+===================================================== */
+
+.stats-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+
+    padding: 18px;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.06);
+}
+
+.stat-label {
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+.stat-value {
+    margin-top: 7px;
+
+    font-size: 26px;
+
+    font-weight: bold;
+}
+
+
+/* =====================================================
+   テーブル
+===================================================== */
+
+.table-wrap {
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 11px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+
+    text-align: left;
+
+    white-space: nowrap;
+}
+
+th {
+    background: #f9fafb;
+
+    font-size: 13px;
+}
+
+.text-right {
+    text-align: right;
+}
+
+
+/* =====================================================
+   商品管理
+===================================================== */
+
+.form-grid {
+    display: grid;
+
+    grid-template-columns:
+        1fr 150px 100px 130px;
+
+    gap: 10px;
+
+    align-items: end;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+}
+
+.form-group input {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 10px;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 8px;
+}
+
+.color-input {
+    height: 42px;
+
+    padding: 3px !important;
+}
+
+.product-admin-list {
+    margin-top: 10px;
+}
+
+.bundle-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.bundle-form-grid select,
+.bundle-form-grid input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+}
+
+.bundle-rule-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bundle-rule-row:last-child { border-bottom: 0; }
+.bundle-rule-description { min-width: 0; }
+
+.product-admin-row {
+    display: grid;
+
+    grid-template-columns:
+        10px
+        minmax(0,1fr)
+        100px
+        90px
+        90px;
+
+    gap: 12px;
+
+    align-items: center;
+
+    padding: 12px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+}
+
+.color-dot {
+    width: 10px;
+
+    height: 35px;
+
+    border-radius: 5px;
+}
+
+
+/* =====================================================
+   金種
+===================================================== */
+
+.money-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 12px;
+}
+
+.money-row {
+    display: grid;
+
+    grid-template-columns:
+        90px
+        1fr;
+
+    gap: 8px;
+
+    align-items: center;
+
+    background: #f9fafb;
+
+    padding: 10px;
+
+    border-radius: 8px;
+}
+
+.money-row input {
+    width: 100%;
+
+    min-height: 42px;
+
+    padding: 9px;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 7px;
+
+    text-align: right;
+}
+
+.money-total {
+    margin-top: 15px;
+
+    padding: 18px;
+
+    background: #eff6ff;
+
+    border-radius: 10px;
+
+    font-size: 22px;
+
+    font-weight: bold;
+
+    text-align: right;
+}
+
+
+/* =====================================================
+   レジ締め
+===================================================== */
+
+.closing-result {
+    margin-top: 20px;
+
+    padding: 18px;
+
+    border-radius: 10px;
+
+    background: #f9fafb;
+}
+
+.difference-positive {
+    color: #dc2626;
+}
+
+.difference-negative {
+    color: #2563eb;
+}
+
+.difference-zero {
+    color: #047857;
+}
+
+
+/* =====================================================
+   モーダル
+===================================================== */
+
+.modal-overlay {
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    background:
+        rgba(0,0,0,.5);
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal {
+    width: 100%;
+
+    max-width: 520px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: white;
+
+    border-radius: 14px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.25);
+}
+
+.modal h2 {
+    margin-top: 0;
+}
+
+.modal-form {
+    display: grid;
+
+    gap: 14px;
+}
+
+.modal-form label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #4b5563;
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+.modal-form input {
+    width: 100%;
+
+    min-height: 44px;
+
+    padding: 11px;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 8px;
+}
+
+.modal-form input[type="color"] {
+    height: 44px;
+
+    padding: 3px;
+}
+
+.modal-buttons {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 20px;
+}
+
+
+/* =====================================================
+   レスポンシブ
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .pos-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .form-grid {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .money-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .container {
+        padding: 10px;
+    }
+
+    .header {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .header h1 {
+        font-size: 18px;
+    }
+
+    #headerDate {
+        font-size: 11px;
+    }
+
+    .product-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .form-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+    .money-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+    .product-admin-row {
+        grid-template-columns:
+            10px
+            minmax(0,1fr);
+
+        gap: 8px;
+    }
+
+    .product-admin-row button {
+        width: 100%;
+    }
+
+    .bundle-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .bundle-rule-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .bundle-rule-row .bundle-delete {
+        grid-column: 2;
+    }
+
+    .stats-grid {
+        gap: 8px;
+    }
+
+    .stat-value {
+        font-size: 21px;
+    }
+
+    .modal {
+        padding: 18px;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     ヘッダー
+===================================================== -->
+
+<header class="header">
+
+    <div>
+
+        <h1>
+            🎪 大学祭レジ
+        </h1>
+
+        <div class="header-sub">
+            現金会計システム
+        </div>
+
+    </div>
+
+    <div id="headerDate"></div>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- =====================================================
+     タブ
+===================================================== -->
+
+<nav class="tabs">
+
+    <button
+        class="tab-button active"
+        data-page="pos"
+        onclick="showPage('pos')"
+    >
+        🧾 会計
+    </button>
+
+    <button
+        class="tab-button"
+        data-page="sales"
+        onclick="showPage('sales')"
+    >
+        📊 売上
+    </button>
+
+    <button
+        class="tab-button"
+        data-page="products"
+        onclick="showPage('products')"
+    >
+        🛍 商品管理
+    </button>
+
+    <button
+        class="tab-button"
+        data-page="register"
+        onclick="showPage('register')"
+    >
+        💴 レジ管理
+    </button>
+
+</nav>
+
+
+<!-- =====================================================
+     会計
+===================================================== -->
+
+<section
+    id="page-pos"
+    class="page active"
+>
+
+    <div class="pos-layout">
+
+
+        <div class="panel">
+
+            <h2 class="panel-title">
+                商品を選択
+            </h2>
+
+            <div
+                id="productButtons"
+                class="product-grid"
+            ></div>
+
+        </div>
+
+
+        <div class="panel">
+
+            <h2 class="panel-title">
+                今回のお会計
+            </h2>
+
+            <div
+                id="cartList"
+                class="cart-list"
+            ></div>
+
+
+            <div class="total-box">
+
+                <div class="total-row main">
+
+                    <span>
+                        合計
+                    </span>
+
+                    <span id="cartTotal">
+                        ¥0
+                    </span>
+
+                </div>
+
+
+                <label>
+
+                    <strong>
+                        受取金額
+                    </strong>
+
+                    <input
+                        id="cashReceived"
+                        class="cash-input"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="numeric"
+                        placeholder="0"
+                        oninput="updateCashReceived()"
+                    >
+
+                </label>
+
+
+                <div
+                    id="changeBox"
+                    class="change-box"
+                >
+
+                    <div class="change-label">
+                        おつり
+                    </div>
+
+                    <div
+                        id="changeValue"
+                        class="change-value"
+                    >
+                        ¥0
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="completeSaleButton"
+                    class="primary-button full-button"
+                    onclick="confirmSale()"
+                    disabled
+                >
+                    会計を確定する
+                </button>
+
+
+                <button
+                    class="secondary-button full-button"
+                    onclick="clearCart()"
+                >
+                    会計をクリア
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     売上
+===================================================== -->
+
+<section
+    id="page-sales"
+    class="page"
+>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                売上合計
+            </div>
+
+            <div
+                id="salesTotal"
+                class="stat-value"
+            >
+                ¥0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                会計件数
+            </div>
+
+            <div
+                id="salesCount"
+                class="stat-value"
+            >
+                0件
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                平均客単価
+            </div>
+
+            <div
+                id="averageSale"
+                class="stat-value"
+            >
+                ¥0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-label">
+                現在のレジ金
+            </div>
+
+            <div
+                id="currentRegisterMoney"
+                class="stat-value"
+            >
+                ¥0
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            商品別売上
+        </h2>
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            商品
+                        </th>
+
+                        <th class="text-right">
+                            販売数
+                        </th>
+
+                        <th class="text-right">
+                            売上
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody
+                    id="productSalesTable"
+                ></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            会計履歴
+        </h2>
+
+
+        <div>
+
+            <button
+                class="primary-button"
+                onclick="exportCSV()"
+            >
+                CSV出力
+            </button>
+
+
+            <button
+                class="danger-button"
+                onclick="resetSalesHistory()"
+                style="margin-left:8px;"
+            >
+                会計履歴をリセット
+            </button>
+
+        </div>
+
+
+        <div
+            class="table-wrap"
+            style="margin-top:15px;"
+        >
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            日時
+                        </th>
+
+                        <th>
+                            内容
+                        </th>
+
+                        <th class="text-right">
+                            合計
+                        </th>
+
+                        <th class="text-right">
+                            受取
+                        </th>
+
+                        <th class="text-right">
+                            おつり
+                        </th>
+
+                        <th>
+                            操作
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody
+                    id="salesHistoryTable"
+                ></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     商品管理
+===================================================== -->
+
+<section
+    id="page-products"
+    class="page"
+>
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            商品を追加
+        </h2>
+
+
+        <div class="form-grid">
+
+            <div class="form-group">
+
+                <label>
+                    商品名
+                </label>
+
+                <input
+                    id="productName"
+                    type="text"
+                    placeholder="例：焼きそば"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    価格
+                </label>
+
+                <input
+                    id="productPrice"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="500"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    ボタン色
+                </label>
+
+                <input
+                    id="productColor"
+                    class="color-input"
+                    type="color"
+                    value="#2563eb"
+                >
+
+            </div>
+
+            <div class="form-group">
+                <label>初期在庫数（個）</label>
+                <input
+                    id="productStock"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="例：100"
+                >
+            </div>
+
+
+            <button
+                class="primary-button"
+                onclick="addProduct()"
+            >
+                商品を追加
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            登録商品
+        </h2>
+
+        <div
+            id="productAdminList"
+            class="product-admin-list"
+        ></div>
+
+    </div>
+
+    <br>
+
+    <div class="panel">
+        <h2 class="panel-title">セット割引の設定</h2>
+        <p>異なる商品を組み合わせて購入したときのセット価格を設定できます。例：お茶150円＋フランクフルト300円をセットで400円。</p>
+        <div class="bundle-form-grid">
+            <div class="form-group"><label>商品A</label><select id="bundleProductA"></select></div>
+            <div class="form-group"><label>商品Aの数量</label><input id="bundleQtyA" type="number" min="1" step="1" value="1"></div>
+            <div class="form-group"><label>商品B</label><select id="bundleProductB"></select></div>
+            <div class="form-group"><label>商品Bの数量</label><input id="bundleQtyB" type="number" min="1" step="1" value="1"></div>
+            <div class="form-group"><label>セット価格（円）</label><input id="bundlePrice" type="number" min="0" step="1" inputmode="numeric" placeholder="例：400"></div>
+            <button class="primary-button" onclick="addBundleRule()">セット割引を追加</button>
+        </div>
+        <div id="bundleRuleList" class="product-admin-list"></div>
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     レジ管理
+===================================================== -->
+
+<section
+    id="page-register"
+    class="page"
+>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            開始時のレジ金
+        </h2>
+
+        <p>
+            大学祭開始時にレジへ入れておく
+            お札・硬貨の枚数を入力してください。
+        </p>
+
+        <div
+            id="openingMoneyGrid"
+            class="money-grid"
+        ></div>
+
+        <div class="money-total">
+
+            開始時レジ金：
+            <span id="openingMoneyTotal">
+                ¥0
+            </span>
+
+        </div>
+
+        <button
+            class="primary-button full-button"
+            onclick="saveOpeningMoney()"
+        >
+            開始時レジ金を保存
+        </button>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            現在の理論レジ金
+        </h2>
+
+        <p>
+            開始時レジ金＋確定した売上から
+            理論上のレジ金を計算します。
+        </p>
+
+        <div
+            id="currentMoneyGrid"
+            class="money-grid"
+        ></div>
+
+        <div class="money-total">
+
+            現在の理論レジ金：
+            <span id="currentMoneyTotal">
+                ¥0
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <br>
+
+
+    <div class="panel">
+
+        <h2 class="panel-title">
+            レジ締め
+        </h2>
+
+        <p>
+            終了時に実際のレジ内にある
+            お札・硬貨の枚数を入力してください。
+        </p>
+
+        <div
+            id="closingMoneyGrid"
+            class="money-grid"
+        ></div>
+
+        <div class="money-total">
+
+            実査金額：
+            <span id="closingMoneyTotal">
+                ¥0
+            </span>
+
+        </div>
+
+        <button
+            class="danger-button full-button"
+            onclick="confirmClosing()"
+        >
+            レジ締めを実行
+        </button>
+
+        <div
+            id="closingResult"
+            class="closing-result"
+        >
+            まだレジ締めをしていません。
+        </div>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- =====================================================
+     確認ダイアログ
+===================================================== -->
+
+<div
+    id="confirmModal"
+    class="modal-overlay"
+>
+
+    <div class="modal">
+
+        <h2 id="confirmModalTitle">
+            確認
+        </h2>
+
+        <div
+            id="confirmModalMessage"
+        ></div>
+
+        <div class="modal-buttons">
+
+            <button
+                class="secondary-button"
+                onclick="closeConfirmModal()"
+            >
+                キャンセル
+            </button>
+
+            <button
+                id="confirmModalButton"
+                class="primary-button"
+            >
+                確定
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     商品編集
+===================================================== -->
+
+<div
+    id="editProductModal"
+    class="modal-overlay"
+>
+
+    <div class="modal">
+
+        <h2>
+            商品を編集
+        </h2>
+
+
+        <div class="modal-form">
+
+            <div>
+
+                <label>
+                    商品名
+                </label>
+
+                <input
+                    id="editProductName"
+                    type="text"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    価格
+                </label>
+
+                <input
+                    id="editProductPrice"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    ボタン色
+                </label>
+
+                <input
+                    id="editProductColor"
+                    type="color"
+                >
+
+            </div>
+
+            <div>
+                <label>在庫数（個）</label>
+                <input
+                    id="editProductStock"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="例：100"
+                >
+            </div>
+
+        </div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                class="secondary-button"
+                onclick="closeEditProductModal()"
+            >
+                キャンセル
+            </button>
+
+            <button
+                class="primary-button"
+                onclick="saveEditedProduct()"
+            >
+                保存
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   設定
+===================================================== */
+
+const STORAGE_KEY =
+    "university_festival_pos_v3";
+
+
+const DENOMINATIONS = [
+    10000,
+    5000,
+    1000,
+    500,
+    100,
+    50,
+    10,
+    5,
+    1
+];
+
+
+/* =====================================================
+   状態
+===================================================== */
+
+let state = {
+
+    products: [
+        {
+            id: createId(),
+            name: "焼きそば",
+            price: 500,
+            color: "#ef4444"
+        },
+        {
+            id: createId(),
+            name: "たこ焼き",
+            price: 400,
+            color: "#f97316"
+        },
+        {
+            id: createId(),
+            name: "フランクフルト",
+            price: 300,
+            color: "#eab308"
+        },
+        {
+            id: createId(),
+            name: "ジュース",
+            price: 150,
+            color: "#22c55e"
+        }
+    ],
+
+    /*
+       会計途中のデータ
+
+       ここも localStorage に保存するため、
+       ページ更新しても復元されます。
+    */
+    cart: [],
+
+    bundleRules: [],
+
+    cashReceived: "",
+
+    sales: [],
+
+    openingMoney: {},
+
+    closingMoney: null,
+
+    closingResult: null
+
+};
+
+
+let confirmAction = null;
+
+let editingProductId = null;
+
+
+/* =====================================================
+   ID
+===================================================== */
+
+function createId() {
+
+    if (
+        window.crypto &&
+        typeof window.crypto.randomUUID ===
+        "function"
+    ) {
+
+        return window.crypto.randomUUID();
+
+    }
+
+    return (
+        Date.now().toString(36) +
+        Math.random()
+            .toString(36)
+            .slice(2)
+    );
+
+}
+
+
+/* =====================================================
+   初期化
+===================================================== */
+
+function init() {
+
+    loadState();
+
+
+    renderProducts();
+
+    renderCart();
+
+    renderSales();
+
+    renderProductAdmin();
+
+    renderBundleRules();
+
+    renderOpeningMoney();
+
+    renderCurrentMoney();
+
+    renderClosingMoney();
+
+    showClosingResult();
+
+
+    /*
+       会計途中の受取金額を復元
+    */
+
+    document.getElementById(
+        "cashReceived"
+    ).value =
+        state.cashReceived || "";
+
+
+    updateChange();
+
+
+    updateHeaderDate();
+
+
+    setInterval(
+        updateHeaderDate,
+        1000
+    );
+
+}
+
+
+/* =====================================================
+   保存
+===================================================== */
+
+function saveState() {
+
+    try {
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(state)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "保存エラー",
+            error
+        );
+
+        alert(
+            "データを保存できませんでした。"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   読み込み
+===================================================== */
+
+function loadState() {
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+
+    if (!saved) {
+
+        DENOMINATIONS.forEach(
+            denomination => {
+
+                state.openingMoney[
+                    denomination
+                ] = 0;
+
+            }
+        );
+
+
+        saveState();
+
+        return;
+
+    }
+
+
+    try {
+
+        const parsed =
+            JSON.parse(saved);
+
+
+        state = {
+
+            ...state,
+
+            ...parsed
+
+        };
+
+
+        if (!Array.isArray(state.products)) {
+
+            state.products = [];
+
+        }
+
+
+        if (!Array.isArray(state.cart)) {
+
+            state.cart = [];
+
+        }
+
+
+        if (!Array.isArray(state.sales)) {
+
+            state.sales = [];
+
+        }
+
+        if (!Array.isArray(state.bundleRules)) {
+            state.bundleRules = [];
+        }
+
+        // 以前のデータには在庫数がないため、未設定として扱います。
+        // 厳密な在庫管理のため、商品管理で在庫を登録するまでは販売できません。
+        state.products = state.products.map(product => ({
+            ...product,
+            stock: Number.isInteger(product.stock) && product.stock >= 0 ? product.stock : null
+        }));
+
+
+        if (
+            !state.openingMoney ||
+            typeof state.openingMoney !==
+            "object"
+        ) {
+
+            state.openingMoney = {};
+
+        }
+
+
+        if (
+            typeof state.cashReceived !==
+            "string" &&
+            typeof state.cashReceived !==
+            "number"
+        ) {
+
+            state.cashReceived = "";
+
+        }
+
+
+        DENOMINATIONS.forEach(
+            denomination => {
+
+                if (
+                    typeof state.openingMoney[
+                        denomination
+                    ] !== "number"
+                ) {
+
+                    state.openingMoney[
+                        denomination
+                    ] = 0;
+
+                }
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "読み込みエラー",
+            error
+        );
+
+        alert(
+            "保存データを読み込めませんでした。"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   共通
+===================================================== */
+
+function yen(value) {
+
+    return (
+        "¥" +
+        Number(value || 0)
+            .toLocaleString("ja-JP")
+    );
+
+}
+
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+function showPage(pageName) {
+
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+
+            page.classList.remove(
+                "active"
+            );
+
+        });
+
+
+    const target =
+        document.getElementById(
+            "page-" + pageName
+        );
+
+
+    if (target) {
+
+        target.classList.add(
+            "active"
+        );
+
+    }
+
+
+    document
+        .querySelectorAll(".tab-button")
+        .forEach(button => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.page ===
+                pageName
+            );
+
+        });
+
+
+    if (pageName === "sales") {
+
+        renderSales();
+
+    }
+
+
+    if (pageName === "register") {
+
+        renderCurrentMoney();
+
+        renderClosingMoney();
+
+        showClosingResult();
+
+    }
+
+}
+
+
+function updateHeaderDate() {
+
+    const now =
+        new Date();
+
+
+    document.getElementById(
+        "headerDate"
+    ).textContent =
+        now.toLocaleString(
+            "ja-JP"
+        );
+
+}
+
+
+/* =====================================================
+   商品表示
+===================================================== */
+
+function renderProducts() {
+
+    const container = document.getElementById("productButtons");
+
+    if (state.products.length === 0) {
+        container.innerHTML = `<div class="empty-cart">商品が登録されていません。</div>`;
+        return;
+    }
+
+    container.innerHTML = state.products.map(product => {
+        const cartItem = state.cart.find(item => item.productId === product.id);
+        const inCart = cartItem ? cartItem.quantity : 0;
+        const stockUnset = product.stock === null || product.stock === undefined;
+        const remaining = stockUnset ? 0 : product.stock - inCart;
+        const disabled = stockUnset || remaining <= 0;
+        return `
+            <button class="product-button" style="background:${escapeHTML(product.color)}" onclick="addToCart('${product.id}')" ${disabled ? "disabled" : ""}>
+                <span class="product-name">${escapeHTML(product.name)}</span>
+                <span class="product-price">${yen(product.price)}</span>
+                <span style="display:block;font-size:12px;margin-top:5px;opacity:.9">${stockUnset ? "在庫未設定" : `在庫 ${Math.max(0, remaining)}個`}${disabled && !stockUnset ? "・在庫切れ" : ""}</span>
+            </button>
+        `;
+    }).join("");
+}
+
+
+/* =====================================================
+   カート
+===================================================== */
+
+function addToCart(productId) {
+    const product = state.products.find(product => product.id === productId);
+    if (!product) return;
+    if (!Number.isInteger(product.stock) || product.stock < 0) {
+        alert(`「${product.name}」の在庫数が未設定です。商品管理から在庫数を登録してください。`);
+        return;
+    }
+    const existing = state.cart.find(item => item.productId === productId);
+    const inCart = existing ? existing.quantity : 0;
+    if (inCart >= product.stock) {
+        alert(`「${product.name}」の在庫が不足しています。`);
+        return;
+    }
+    if (existing) existing.quantity++;
+    else state.cart.push({ productId, quantity: 1 });
+    saveState();
+    renderProducts();
+    renderCart();
+}
+
+
+function changeQuantity(productId, amount) {
+    const item = state.cart.find(item => item.productId === productId);
+    if (!item) return;
+    if (amount > 0) {
+        const product = state.products.find(product => product.id === productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity >= product.stock) {
+            alert("在庫数を超えて追加することはできません。");
+            return;
+        }
+    }
+    item.quantity += amount;
+    if (item.quantity <= 0) state.cart = state.cart.filter(item => item.productId !== productId);
+    saveState();
+    renderProducts();
+    renderCart();
+}
+
+
+function removeFromCart(productId) {
+
+    state.cart =
+        state.cart.filter(
+            item =>
+                item.productId !==
+                productId
+        );
+
+
+    saveState();
+
+    renderCart();
+
+}
+
+
+function clearCart() {
+
+    if (state.cart.length === 0) {
+
+        return;
+
+    }
+
+
+    openConfirm(
+        "会計をクリア",
+        `
+            <p>
+                現在のお会計内容を
+                すべてクリアしますか？
+            </p>
+        `,
+        function() {
+
+            state.cart = [];
+
+            state.cashReceived = "";
+
+
+            document.getElementById(
+                "cashReceived"
+            ).value = "";
+
+
+            saveState();
+
+            renderCart();
+
+        }
+    );
+
+}
+
+
+function getCartCalculation() {
+    const quantities = {};
+    const productsById = {};
+    const lineTotals = {};
+    const lineDiscounts = {};
+    state.cart.forEach(item => {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product) return;
+        quantities[item.productId] = item.quantity;
+        productsById[item.productId] = product;
+        lineTotals[item.productId] = product.price * item.quantity;
+        lineDiscounts[item.productId] = 0;
+    });
+
+    let bundleDiscount = 0;
+    const appliedBundles = [];
+    state.bundleRules.forEach(rule => {
+        const productA = productsById[rule.productAId];
+        const productB = productsById[rule.productBId];
+        if (!productA || !productB || productA.id === productB.id) return;
+        const qtyA = Math.max(1, Number(rule.qtyA) || 1);
+        const qtyB = Math.max(1, Number(rule.qtyB) || 1);
+        const possible = Math.min(
+            Math.floor((quantities[productA.id] || 0) / qtyA),
+            Math.floor((quantities[productB.id] || 0) / qtyB)
+        );
+        if (possible <= 0) return;
+        const regular = (productA.price * qtyA + productB.price * qtyB) * possible;
+        const discount = Math.max(0, regular - Number(rule.bundlePrice) * possible);
+        if (discount <= 0) return;
+
+        // このルールで使う数量を先に確保し、同じ商品を別ルールで二重割引しない
+        quantities[productA.id] -= qtyA * possible;
+        quantities[productB.id] -= qtyB * possible;
+        const regularA = productA.price * qtyA * possible;
+        const regularB = productB.price * qtyB * possible;
+        const bundleTotal = Number(rule.bundlePrice) * possible;
+        const allocatedA = regular > 0 ? Math.round(bundleTotal * regularA / regular) : 0;
+        const allocatedB = bundleTotal - allocatedA;
+        lineTotals[productA.id] -= regularA;
+        lineTotals[productB.id] -= regularB;
+        lineTotals[productA.id] += allocatedA;
+        lineTotals[productB.id] += allocatedB;
+        lineDiscounts[productA.id] += regularA - allocatedA;
+        lineDiscounts[productB.id] += regularB - allocatedB;
+        bundleDiscount += discount;
+        appliedBundles.push({
+            ruleId: rule.id,
+            label: `${productA.name} × ${qtyA} ＋ ${productB.name} × ${qtyB}`,
+            bundles: possible,
+            bundlePrice: Number(rule.bundlePrice),
+            discount
+        });
+    });
+
+    const items = state.cart.map(item => {
+        const product = productsById[item.productId];
+        if (!product) return null;
+        const regularSubtotal = product.price * item.quantity;
+        return {
+            productId: product.id, name: product.name, price: product.price, quantity: item.quantity,
+            subtotal: lineTotals[product.id] ?? regularSubtotal, regularSubtotal,
+            discount: lineDiscounts[product.id] || 0
+        };
+    }).filter(Boolean);
+    const subtotal = items.reduce((sum, item) => sum + item.regularSubtotal, 0);
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    return { subtotal, total, discount: subtotal - total, items, appliedBundles };
+}
+
+function getCartTotal() {
+    return getCartCalculation().total;
+}
+
+
+function renderCart() {
+    const container = document.getElementById("cartList");
+    if (state.cart.length === 0) {
+        container.innerHTML = `<div class="empty-cart">商品を選択してください</div>`;
+    } else {
+        const calculation = getCartCalculation();
+        container.innerHTML = state.cart.map(item => {
+            const product = state.products.find(product => product.id === item.productId);
+            if (!product) return "";
+            const line = calculation.items.find(row => row.productId === product.id);
+            return `
+                <div class="cart-item">
+                    <div>
+                        <div class="cart-item-name">${escapeHTML(product.name)}</div>
+                        <div class="cart-item-price">${yen(product.price)} × ${item.quantity} ＝ ${yen(line ? line.subtotal : product.price * item.quantity)}${line && line.discount ? `<br><span style="color:#b45309">セット割引適用</span>` : ""}</div>
+                    </div>
+                    <div class="quantity-controls">
+                        <button onclick="changeQuantity('${product.id}', -1)">−</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button onclick="changeQuantity('${product.id}', 1)">＋</button>
+                        <button class="delete" onclick="removeFromCart('${product.id}')">×</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+        if (calculation.appliedBundles.length) {
+            container.innerHTML += `<div style="padding:10px 0;color:#92400e;font-size:13px">${calculation.appliedBundles.map(b => `${escapeHTML(b.label)}：${b.bundles}セット適用（割引 −${yen(b.discount)}）`).join("<br>")}</div>`;
+        }
+    }
+    document.getElementById("cartTotal").textContent = yen(getCartTotal());
+    updateChange();
+}
+
+
+/* =====================================================
+   受取金
+===================================================== */
+
+function updateCashReceived() {
+
+    state.cashReceived =
+        document.getElementById(
+            "cashReceived"
+        ).value;
+
+
+    /*
+       入力するたびに保存。
+
+       そのため、途中でページを更新しても
+       受取金額が残ります。
+    */
+
+    saveState();
+
+
+    updateChange();
+
+}
+
+
+function updateChange() {
+
+    const total =
+        getCartTotal();
+
+
+    const received =
+        Number(
+            document.getElementById(
+                "cashReceived"
+            ).value
+        ) || 0;
+
+
+    const difference =
+        received - total;
+
+
+    const changeBox =
+        document.getElementById(
+            "changeBox"
+        );
+
+
+    const changeValue =
+        document.getElementById(
+            "changeValue"
+        );
+
+
+    const button =
+        document.getElementById(
+            "completeSaleButton"
+        );
+
+
+    if (total <= 0) {
+
+        changeValue.textContent =
+            yen(0);
+
+        changeBox.classList.remove(
+            "insufficient"
+        );
+
+        button.disabled = true;
+
+        return;
+
+    }
+
+
+    if (received < total) {
+
+        changeValue.textContent =
+            `あと ${yen(
+                total - received
+            )}`;
+
+        changeBox.classList.add(
+            "insufficient"
+        );
+
+        button.disabled = true;
+
+        return;
+
+    }
+
+
+    changeValue.textContent =
+        yen(difference);
+
+
+    changeBox.classList.remove(
+        "insufficient"
+    );
+
+
+    button.disabled = false;
+
+}
+
+
+/* =====================================================
+   会計
+===================================================== */
+
+function confirmSale() {
+
+    const total =
+        getCartTotal();
+
+
+    const received =
+        Number(
+            document.getElementById(
+                "cashReceived"
+            ).value
+        ) || 0;
+
+
+    if (total <= 0) {
+
+        return;
+
+    }
+
+
+    if (received < total) {
+        alert("受取金額が不足しています。");
+        return;
+    }
+
+    for (const item of state.cart) {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity > product.stock) {
+            alert(`「${product ? product.name : "商品"}」の在庫が不足しているか、在庫数が未設定です。商品管理を確認してください。`);
+            return;
+        }
+    }
+
+    const change =
+        received - total;
+
+
+    const calculation = getCartCalculation();
+    const details = calculation.items.map(item => `${escapeHTML(item.name)} × ${item.quantity}`).join("<br>") +
+        (calculation.appliedBundles.length ? "<br><br>セット割引：<br>" + calculation.appliedBundles.map(bundle => `${escapeHTML(bundle.label)} × ${bundle.bundles}セット（−${yen(bundle.discount)}）`).join("<br>") : "");
+
+
+    openConfirm(
+        "会計を確定",
+        `
+            <p>
+                ${details}
+            </p>
+
+            <hr>
+
+            <p>
+                <strong>
+                    合計：
+                </strong>
+                ${yen(total)}
+            </p>
+
+            <p>
+                <strong>
+                    受取：
+                </strong>
+                ${yen(received)}
+            </p>
+
+            <p>
+                <strong>
+                    おつり：
+                </strong>
+                ${yen(change)}
+            </p>
+
+            <p>
+                この会計を確定しますか？
+            </p>
+        `,
+        function() {
+
+            completeSale();
+
+        }
+    );
+
+}
+
+
+function completeSale() {
+    const calculation = getCartCalculation();
+    const total = calculation.total;
+    const received = Number(document.getElementById("cashReceived").value) || 0;
+    if (total <= 0 || received < total) return;
+
+    // 確認ダイアログを開いている間に在庫が変更されていないか再確認
+    for (const item of state.cart) {
+        const product = state.products.find(product => product.id === item.productId);
+        if (!product || !Number.isInteger(product.stock) || item.quantity > product.stock) {
+            alert(`「${product ? product.name : "商品"}」の在庫が不足しているため、会計を確定できません。`);
+            renderProducts(); renderCart(); return;
+        }
+    }
+
+    const change = received - total;
+    const items = calculation.items.map(item => ({...item}));
+    state.cart.forEach(item => {
+        const product = state.products.find(product => product.id === item.productId);
+        product.stock -= item.quantity;
+    });
+    state.sales.push({
+        id: createId(), date: new Date().toISOString(), items,
+        bundles: calculation.appliedBundles, subtotal: calculation.subtotal,
+        discount: calculation.discount, total, received, change, cancelled: false
+    });
+
+    state.cart = [];
+    state.cashReceived = "";
+    document.getElementById("cashReceived").value = "";
+    saveState();
+    renderProducts(); renderCart(); renderProductAdmin(); renderSales(); renderCurrentMoney();
+    alert(`会計完了\n\n合計：${yen(total)}\nおつり：${yen(change)}`);
+}
+
+
+/* =====================================================
+   売上
+===================================================== */
+
+function getValidSales() {
+
+    return state.sales.filter(
+        sale =>
+            sale.cancelled !== true
+    );
+
+}
+
+
+function getSalesTotal() {
+
+    return getValidSales().reduce(
+        (
+            sum,
+            sale
+        ) =>
+            sum +
+            Number(
+                sale.total || 0
+            ),
+        0
+    );
+
+}
+
+
+function renderSales() {
+
+    const sales =
+        getValidSales();
+
+
+    const total =
+        getSalesTotal();
+
+
+    document.getElementById(
+        "salesTotal"
+    ).textContent =
+        yen(total);
+
+
+    document.getElementById(
+        "salesCount"
+    ).textContent =
+        sales.length + "件";
+
+
+    document.getElementById(
+        "averageSale"
+    ).textContent =
+        yen(
+            sales.length
+                ? Math.round(
+                    total /
+                    sales.length
+                )
+                : 0
+        );
+
+
+    document.getElementById(
+        "currentRegisterMoney"
+    ).textContent =
+        yen(
+            getCurrentRegisterMoney()
+        );
+
+
+    renderProductSales();
+
+    renderSalesHistory();
+
+}
+
+
+/* =====================================================
+   商品別売上
+===================================================== */
+
+function renderProductSales() {
+
+    const data = {};
+
+
+    state.products.forEach(
+        product => {
+
+            data[product.id] = {
+
+                name:
+                    product.name,
+
+                quantity:
+                    0,
+
+                sales:
+                    0
+
+            };
+
+        }
+    );
+
+
+    getValidSales().forEach(
+        sale => {
+
+            sale.items.forEach(
+                item => {
+
+                    if (
+                        !data[item.productId]
+                    ) {
+
+                        data[item.productId] = {
+
+                            name:
+                                item.name,
+
+                            quantity:
+                                0,
+
+                            sales:
+                                0
+
+                        };
+
+                    }
+
+
+                    data[
+                        item.productId
+                    ].quantity +=
+                        item.quantity;
+
+
+                    data[
+                        item.productId
+                    ].sales +=
+                        item.subtotal;
+
+                }
+            );
+
+        }
+    );
+
+
+    const tbody =
+        document.getElementById(
+            "productSalesTable"
+        );
+
+
+    const rows =
+        Object.values(data)
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    b.sales -
+                    a.sales
+            )
+            .map(item => `
+
+                <tr>
+
+                    <td>
+                        ${escapeHTML(
+                            item.name
+                        )}
+                    </td>
+
+                    <td class="text-right">
+                        ${item.quantity}
+                    </td>
+
+                    <td class="text-right">
+                        ${yen(item.sales)}
+                    </td>
+
+                </tr>
+
+            `)
+            .join("");
+
+
+    tbody.innerHTML =
+        rows ||
+        `
+            <tr>
+
+                <td colspan="3">
+                    データがありません。
+                </td>
+
+            </tr>
+        `;
+
+}
+
+
+/* =====================================================
+   会計履歴
+===================================================== */
+
+function renderSalesHistory() {
+
+    const tbody =
+        document.getElementById(
+            "salesHistoryTable"
+        );
+
+
+    const rows =
+        [...state.sales]
+            .reverse()
+            .map(sale => {
+
+                const date =
+                    new Date(
+                        sale.date
+                    ).toLocaleString(
+                        "ja-JP"
+                    );
+
+
+                const contents =
+                    sale.items
+                        .map(
+                            item =>
+                                `${escapeHTML(
+                                    item.name
+                                )} × ${
+                                    item.quantity
+                                }`
+                        )
+                        .join("<br>");
+
+
+                if (
+                    sale.cancelled
+                ) {
+
+                    return `
+
+                        <tr
+                            style="opacity:.55"
+                        >
+
+                            <td>
+                                ${date}
+                            </td>
+
+                            <td>
+
+                                <s>
+                                    ${contents}
+                                </s>
+
+                                <br>
+
+                                <strong
+                                    style="
+                                        color:#dc2626;
+                                    "
+                                >
+                                    取消済み
+                                </strong>
+
+                            </td>
+
+                            <td class="text-right">
+
+                                <s>
+                                    ${yen(
+                                        sale.total
+                                    )}
+                                </s>
+
+                            </td>
+
+                            <td class="text-right">
+                                ${yen(
+                                    sale.received
+                                )}
+                            </td>
+
+                            <td class="text-right">
+                                ${yen(
+                                    sale.change
+                                )}
+                            </td>
+
+                            <td>
+                                —
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+
+
+                return `
+
+                    <tr>
+
+                        <td>
+                            ${date}
+                        </td>
+
+                        <td>
+                            ${contents}
+                        </td>
+
+                        <td class="text-right">
+                            ${yen(
+                                sale.total
+                            )}
+                        </td>
+
+                        <td class="text-right">
+                            ${yen(
+                                sale.received
+                            )}
+                        </td>
+
+                        <td class="text-right">
+                            ${yen(
+                                sale.change
+                            )}
+                        </td>
+
+                        <td>
+
+                            <button
+                                class="danger-button"
+                                onclick="
+                                    confirmCancelSale(
+                                        '${sale.id}'
+                                    )
+                                "
+                            >
+                                取消
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            })
+            .join("");
+
+
+    tbody.innerHTML =
+        rows ||
+        `
+            <tr>
+
+                <td colspan="6">
+                    会計履歴がありません。
+                </td>
+
+            </tr>
+        `;
+
+}
+
+
+/* =====================================================
+   会計取消
+===================================================== */
+
+function confirmCancelSale(
+    saleId
+) {
+
+    const sale =
+        state.sales.find(
+            sale =>
+                sale.id ===
+                saleId
+        );
+
+
+    if (
+        !sale ||
+        sale.cancelled
+    ) {
+
+        return;
+
+    }
+
+
+    openConfirm(
+        "会計を取り消す",
+        `
+            <p>
+                この会計を取り消しますか？
+            </p>
+
+            <p>
+                <strong>
+                    金額：
+                </strong>
+
+                ${yen(
+                    sale.total
+                )}
+            </p>
+
+            <p
+                style="color:#dc2626;"
+            >
+                ※ 売上集計から除外されます。
+            </p>
+        `,
+        function() {
+
+            sale.cancelled = true;
+            // 取消した会計の商品在庫を戻す
+            sale.items.forEach(item => {
+                const product = state.products.find(product => product.id === item.productId);
+                if (product && Number.isInteger(product.stock)) product.stock += item.quantity;
+            });
+
+            saveState();
+            renderProducts();
+            renderProductAdmin();
+
+
+            renderSales();
+
+            renderCurrentMoney();
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   会計履歴リセット
+===================================================== */
+
+function resetSalesHistory() {
+
+    if (
+        state.sales.length === 0
+    ) {
+
+        alert(
+            "リセットする会計履歴がありません。"
+        );
+
+        return;
+
+    }
+
+
+    const saleCount =
+        state.sales.length;
+
+
+    const salesTotal =
+        getSalesTotal();
+
+
+    openConfirm(
+        "会計履歴をリセット",
+        `
+            <p>
+                <strong>
+                    会計履歴をすべて削除します。
+                </strong>
+            </p>
+
+            <p>
+                会計件数：
+                ${saleCount}件
+            </p>
+
+            <p>
+                現在の売上：
+                ${yen(
+                    salesTotal
+                )}
+            </p>
+
+            <p
+                style="color:#dc2626;"
+            >
+                ※ この操作は元に戻せません。
+            </p>
+
+            <p>
+                本当にリセットしますか？
+            </p>
+        `,
+        function() {
+
+            state.sales = [];
+
+
+            /*
+               売上をリセットしたので
+               レジ締め結果もリセット
+            */
+
+            state.closingMoney =
+                null;
+
+            state.closingResult =
+                null;
+
+
+            saveState();
+
+
+            renderSales();
+
+            renderCurrentMoney();
+
+            renderClosingMoney();
+
+            showClosingResult();
+
+
+            alert(
+                "会計履歴をリセットしました。"
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   商品追加
+===================================================== */
+
+function addProduct() {
+
+    const name =
+        document.getElementById(
+            "productName"
+        ).value.trim();
+
+
+    const price =
+        Number(
+            document.getElementById(
+                "productPrice"
+            ).value
+        );
+
+
+    const color = document.getElementById("productColor").value;
+    const stockRaw = document.getElementById("productStock").value.trim();
+    const stock = Number(stockRaw);
+
+
+    if (!name) {
+
+        alert(
+            "商品名を入力してください。"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !Number.isFinite(price) ||
+        price < 0
+    ) {
+
+        alert(
+            "正しい価格を入力してください。"
+        );
+
+        return;
+
+    }
+
+
+    if (stockRaw === "" || !Number.isInteger(stock) || stock < 0) {
+        alert("初期在庫数を0以上の整数で入力してください。");
+        return;
+    }
+
+    state.products.push({
+        id: createId(), name, price: Math.floor(price), color, stock
+    });
+
+
+    saveState();
+
+
+    document.getElementById(
+        "productName"
+    ).value = "";
+
+
+    document.getElementById("productPrice").value = "";
+    document.getElementById("productStock").value = "";
+
+    renderProducts();
+    renderProductAdmin();
+    renderBundleRules();
+
+}
+
+
+/* =====================================================
+   商品管理
+===================================================== */
+
+function renderProductAdmin() {
+
+    const container =
+        document.getElementById(
+            "productAdminList"
+        );
+
+
+    if (
+        state.products.length === 0
+    ) {
+
+        container.innerHTML = `
+            <p>
+                商品が登録されていません。
+            </p>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        state.products
+            .map(product => `
+
+                <div
+                    class="product-admin-row"
+                >
+
+                    <div
+                        class="color-dot"
+                        style="
+                            background:${escapeHTML(
+                                product.color
+                            )}
+                        "
+                    ></div>
+
+
+                    <div>
+                        <strong>${escapeHTML(product.name)}</strong>
+                        <div style="font-size:12px;color:#6b7280;margin-top:3px">在庫：${Number.isInteger(product.stock) ? `${product.stock}個` : "未設定（販売不可）"}</div>
+                    </div>
+
+
+                    <div>
+                        ${yen(
+                            product.price
+                        )}
+                    </div>
+
+
+                    <button
+                        class="secondary-button"
+                        onclick="
+                            openEditProduct(
+                                '${product.id}'
+                            )
+                        "
+                    >
+                        編集
+                    </button>
+
+
+                    <button
+                        class="danger-button"
+                        onclick="
+                            deleteProduct(
+                                '${product.id}'
+                            )
+                        "
+                    >
+                        削除
+                    </button>
+
+                </div>
+
+            `)
+            .join("");
+
+}
+
+function renderBundleSelectors() {
+    const options = state.products.map(product => `<option value="${escapeHTML(product.id)}">${escapeHTML(product.name)}</option>`).join("");
+    ["bundleProductA", "bundleProductB"].forEach(id => {
+        const select = document.getElementById(id);
+        const previous = select.value;
+        select.innerHTML = options || `<option value="">商品を登録してください</option>`;
+        if (state.products.some(product => product.id === previous)) select.value = previous;
+    });
+    if (state.products.length > 1 && document.getElementById("bundleProductA").value === document.getElementById("bundleProductB").value) {
+        document.getElementById("bundleProductB").selectedIndex = 1;
+    }
+}
+
+function renderBundleRules() {
+    renderBundleSelectors();
+    const container = document.getElementById("bundleRuleList");
+    if (!state.bundleRules.length) {
+        container.innerHTML = `<p style="color:#9ca3af;padding:10px 0">セット割引はまだ設定されていません。</p>`;
+        return;
+    }
+    container.innerHTML = state.bundleRules.map(rule => {
+        const a = state.products.find(product => product.id === rule.productAId);
+        const b = state.products.find(product => product.id === rule.productBId);
+        return `<div class="bundle-rule-row"><div class="bundle-rule-description"><strong>${escapeHTML(a ? a.name : "削除済み商品")} × ${rule.qtyA} ＋ ${escapeHTML(b ? b.name : "削除済み商品")} × ${rule.qtyB}</strong><div style="font-size:13px;color:#6b7280">セット価格：${yen(rule.bundlePrice)}</div></div><button class="danger-button bundle-delete" onclick="deleteBundleRule('${rule.id}')">削除</button></div>`;
+    }).join("");
+}
+
+function addBundleRule() {
+    const productAId = document.getElementById("bundleProductA").value;
+    const productBId = document.getElementById("bundleProductB").value;
+    const qtyA = Number(document.getElementById("bundleQtyA").value);
+    const qtyB = Number(document.getElementById("bundleQtyB").value);
+    const bundlePrice = Number(document.getElementById("bundlePrice").value);
+    const a = state.products.find(product => product.id === productAId);
+    const b = state.products.find(product => product.id === productBId);
+    if (!a || !b) { alert("商品を2つ以上登録してください。"); return; }
+    if (productAId === productBId) { alert("セット割引には異なる2商品を選んでください。"); return; }
+    if (!Number.isInteger(qtyA) || qtyA < 1 || !Number.isInteger(qtyB) || qtyB < 1 || !Number.isInteger(bundlePrice) || bundlePrice < 0) { alert("数量は1以上の整数、セット価格は0以上の整数で入力してください。"); return; }
+    const regular = a.price * qtyA + b.price * qtyB;
+    if (bundlePrice >= regular) { alert("セット価格は通常合計より安い金額にしてください。"); return; }
+    state.bundleRules.push({ id: createId(), productAId, qtyA, productBId, qtyB, bundlePrice });
+    saveState(); renderBundleRules(); renderCart();
+    document.getElementById("bundlePrice").value = "";
+}
+
+function deleteBundleRule(ruleId) {
+    state.bundleRules = state.bundleRules.filter(rule => rule.id !== ruleId);
+    saveState(); renderBundleRules(); renderCart();
+}
+
+
+/* =====================================================
+   商品編集
+===================================================== */
+
+function openEditProduct(
+    productId
+) {
+
+    const product =
+        state.products.find(
+            product =>
+                product.id ===
+                productId
+        );
+
+
+    if (!product) {
+
+        alert(
+            "編集対象の商品が見つかりません。"
+        );
+
+        return;
+
+    }
+
+
+    editingProductId =
+        productId;
+
+
+    document.getElementById(
+        "editProductName"
+    ).value =
+        product.name;
+
+
+    document.getElementById(
+        "editProductPrice"
+    ).value =
+        product.price;
+
+
+    document.getElementById("editProductColor").value = product.color;
+    document.getElementById("editProductStock").value = Number.isInteger(product.stock) ? product.stock : "";
+
+
+    document.getElementById(
+        "editProductModal"
+    ).classList.add(
+        "show"
+    );
+
+}
+
+
+function closeEditProductModal() {
+
+    document.getElementById(
+        "editProductModal"
+    ).classList.remove(
+        "show"
+    );
+
+
+    editingProductId =
+        null;
+
+}
+
+
+function saveEditedProduct() {
+
+    if (!editingProductId) {
+
+        return;
+
+    }
+
+
+    const product =
+        state.products.find(
+            product =>
+                product.id ===
+                editingProductId
+        );
+
+
+    if (!product) {
+
+        alert(
+            "編集対象の商品が見つかりません。"
+        );
+
+        closeEditProductModal();
+
+        return;
+
+    }
+
+
+    const name =
+        document.getElementById(
+            "editProductName"
+        ).value.trim();
+
+
+    const price =
+        Number(
+            document.getElementById(
+                "editProductPrice"
+            ).value
+        );
+
+
+    const color = document.getElementById("editProductColor").value;
+    const stockRaw = document.getElementById("editProductStock").value.trim();
+    const stock = Number(stockRaw);
+
+
+    if (!name) {
+
+        alert(
+            "商品名を入力してください。"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !Number.isFinite(price) ||
+        price < 0
+    ) {
+
+        alert(
+            "正しい価格を入力してください。"
+        );
+
+        return;
+
+    }
+
+
+    if (stockRaw === "" || !Number.isInteger(stock) || stock < 0) {
+        alert("在庫数を0以上の整数で入力してください。空欄にはできません。");
+        return;
+    }
+    if (state.cart.some(item => item.productId === product.id && item.quantity > stock)) {
+        alert("現在のカート数量より少ない在庫数には変更できません。");
+        return;
+    }
+
+    product.name = name;
+    product.price = Math.floor(price);
+    product.color = color;
+    product.stock = stock;
+
+
+    saveState();
+
+
+    renderProducts();
+
+    renderProductAdmin();
+    renderBundleRules();
+
+    renderCart();
+
+    renderSales();
+
+
+    closeEditProductModal();
+
+
+    alert(
+        "商品情報を更新しました。"
+    );
+
+}
+
+
+/* =====================================================
+   商品削除
+===================================================== */
+
+function deleteProduct(
+    productId
+) {
+
+    const product =
+        state.products.find(
+            product =>
+                product.id ===
+                productId
+        );
+
+
+    if (!product) {
+
+        alert(
+            "削除対象の商品が見つかりません。"
+        );
+
+        return;
+
+    }
+
+
+    const isInCart =
+        state.cart.some(
+            item =>
+                item.productId ===
+                productId
+        );
+
+
+    if (isInCart) {
+
+        alert(
+            `「${product.name}」は現在のお会計に入っています。\n\n` +
+            `先に会計から削除してください。`
+        );
+
+        return;
+
+    }
+
+
+    openConfirm(
+        "商品を削除",
+        `
+            <p>
+                商品
+                <strong>
+                    「${escapeHTML(
+                        product.name
+                    )}」
+                </strong>
+                を削除しますか？
+            </p>
+
+            <p
+                style="color:#dc2626;"
+            >
+                ※ 過去の売上履歴は残ります。
+            </p>
+        `,
+        function() {
+
+            state.products = state.products.filter(item => item.id !== productId);
+            state.bundleRules = state.bundleRules.filter(rule => rule.productAId !== productId && rule.productBId !== productId);
+
+
+            saveState();
+
+
+            renderProducts();
+
+            renderProductAdmin();
+
+            renderCart();
+
+            renderSales();
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   金種
+===================================================== */
+
+function calculateMoney(
+    money
+) {
+
+    return DENOMINATIONS.reduce(
+        (
+            total,
+            denomination
+        ) => {
+
+            return (
+                total +
+                denomination *
+                Number(
+                    money[
+                        denomination
+                    ] || 0
+                )
+            );
+
+        },
+        0
+    );
+
+}
+
+
+function renderMoneyInputs(
+    containerId,
+    values,
+    changeFunction
+) {
+
+    const container =
+        document.getElementById(
+            containerId
+        );
+
+
+    container.innerHTML =
+        DENOMINATIONS
+            .map(
+                denomination => `
+
+                    <div
+                        class="money-row"
+                    >
+
+                        <strong>
+                            ${yen(
+                                denomination
+                            )}
+                        </strong>
+
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            value="${
+                                Number(
+                                    values[
+                                        denomination
+                                    ] || 0
+                                )
+                            }"
+                            data-denomination="${denomination}"
+                            ${
+                                changeFunction
+                                    ? `oninput="${changeFunction}"`
+                                    : ""
+                            }
+                        >
+
+                    </div>
+
+                `
+            )
+            .join("");
+
+}
+
+
+/* =====================================================
+   開始レジ金
+===================================================== */
+
+function renderOpeningMoney() {
+
+    renderMoneyInputs(
+        "openingMoneyGrid",
+        state.openingMoney,
+        "updateOpeningTotal()"
+    );
+
+
+    updateOpeningTotal();
+
+}
+
+
+function updateOpeningTotal() {
+
+    const inputs =
+        document.querySelectorAll(
+            "#openingMoneyGrid input"
+        );
+
+
+    let total = 0;
+
+
+    inputs.forEach(
+        input => {
+
+            const denomination =
+                Number(
+                    input.dataset
+                        .denomination
+                );
+
+
+            const count =
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(
+                            input.value
+                        ) || 0
+                    )
+                );
+
+
+            total +=
+                denomination *
+                count;
+
+        }
+    );
+
+
+    document.getElementById(
+        "openingMoneyTotal"
+    ).textContent =
+        yen(total);
+
+}
+
+
+function saveOpeningMoney() {
+
+    const inputs =
+        document.querySelectorAll(
+            "#openingMoneyGrid input"
+        );
+
+
+    const newMoney = {};
+
+
+    inputs.forEach(
+        input => {
+
+            const denomination =
+                Number(
+                    input.dataset
+                        .denomination
+                );
+
+
+            newMoney[
+                denomination
+            ] =
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(
+                            input.value
+                        ) || 0
+                    )
+                );
+
+        }
+    );
+
+
+    const total =
+        calculateMoney(
+            newMoney
+        );
+
+
+    openConfirm(
+        "開始時レジ金を保存",
+        `
+            <p>
+                以下の金額を
+                開始時レジ金として保存します。
+            </p>
+
+            <p>
+                <strong>
+                    ${yen(total)}
+                </strong>
+            </p>
+        `,
+        function() {
+
+            state.openingMoney =
+                newMoney;
+
+
+            state.closingMoney =
+                null;
+
+
+            state.closingResult =
+                null;
+
+
+            saveState();
+
+
+            renderCurrentMoney();
+
+            renderClosingMoney();
+
+            showClosingResult();
+
+
+            alert(
+                "開始時レジ金を保存しました。"
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   現在の理論レジ金
+===================================================== */
+
+function getCurrentRegisterMoney() {
+
+    const opening =
+        calculateMoney(
+            state.openingMoney
+        );
+
+
+    const sales =
+        getSalesTotal();
+
+
+    return (
+        opening +
+        sales
+    );
+
+}
+
+
+function renderCurrentMoney() {
+
+    /*
+       現在のレジ金の金種内訳は、
+       開始時の金種を参考表示します。
+
+       売上は金種別で受け取った内訳を
+       記録していないため、
+       総額のみを正確に表示します。
+    */
+
+    renderMoneyInputs(
+        "currentMoneyGrid",
+        state.openingMoney,
+        ""
+    );
+
+
+    document
+        .querySelectorAll(
+            "#currentMoneyGrid input"
+        )
+        .forEach(
+            input => {
+
+                input.disabled = true;
+
+            }
+        );
+
+
+    document.getElementById(
+        "currentMoneyTotal"
+    ).textContent =
+        yen(
+            getCurrentRegisterMoney()
+        );
+
+}
+
+
+/* =====================================================
+   レジ締め
+===================================================== */
+
+function renderClosingMoney() {
+
+    const values =
+        state.closingMoney || {};
+
+
+    renderMoneyInputs(
+        "closingMoneyGrid",
+        values,
+        "updateClosingTotal()"
+    );
+
+
+    updateClosingTotal();
+
+}
+
+
+function updateClosingTotal() {
+
+    const inputs =
+        document.querySelectorAll(
+            "#closingMoneyGrid input"
+        );
+
+
+    let total = 0;
+
+
+    inputs.forEach(
+        input => {
+
+            const denomination =
+                Number(
+                    input.dataset
+                        .denomination
+                );
+
+
+            const count =
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(
+                            input.value
+                        ) || 0
+                    )
+                );
+
+
+            total +=
+                denomination *
+                count;
+
+        }
+    );
+
+
+    document.getElementById(
+        "closingMoneyTotal"
+    ).textContent =
+        yen(total);
+
+}
+
+
+function confirmClosing() {
+
+    const inputs =
+        document.querySelectorAll(
+            "#closingMoneyGrid input"
+        );
+
+
+    const closingMoney = {};
+
+
+    inputs.forEach(
+        input => {
+
+            const denomination =
+                Number(
+                    input.dataset
+                        .denomination
+                );
+
+
+            closingMoney[
+                denomination
+            ] =
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(
+                            input.value
+                        ) || 0
+                    )
+                );
+
+        }
+    );
+
+
+    const actual =
+        calculateMoney(
+            closingMoney
+        );
+
+
+    const theoretical =
+        getCurrentRegisterMoney();
+
+
+    const difference =
+        actual -
+        theoretical;
+
+
+    openConfirm(
+        "レジ締めを実行",
+        `
+            <p>
+                <strong>
+                    理論レジ金：
+                </strong>
+
+                ${yen(
+                    theoretical
+                )}
+            </p>
+
+            <p>
+                <strong>
+                    実査金額：
+                </strong>
+
+                ${yen(
+                    actual
+                )}
+            </p>
+
+            <p>
+                <strong>
+                    違算：
+                </strong>
+
+                ${
+                    difference >= 0
+                        ? "+"
+                        : ""
+                }
+
+                ${yen(
+                    difference
+                )}
+            </p>
+
+            <p>
+                この内容でレジ締めしますか？
+            </p>
+        `,
+        function() {
+
+            state.closingMoney =
+                closingMoney;
+
+
+            state.closingResult = {
+
+                theoretical,
+
+                actual,
+
+                difference,
+
+                date:
+                    new Date()
+                        .toISOString()
+
+            };
+
+
+            saveState();
+
+
+            showClosingResult();
+
+        }
+    );
+
+}
+
+
+function showClosingResult() {
+
+    const container =
+        document.getElementById(
+            "closingResult"
+        );
+
+
+    const result =
+        state.closingResult;
+
+
+    if (!result) {
+
+        container.innerHTML =
+            "まだレジ締めをしていません。";
+
+        return;
+
+    }
+
+
+    let className =
+        "difference-zero";
+
+
+    if (
+        result.difference > 0
+    ) {
+
+        className =
+            "difference-positive";
+
+    } else if (
+        result.difference < 0
+    ) {
+
+        className =
+            "difference-negative";
+
+    }
+
+
+    let label;
+
+
+    if (
+        result.difference === 0
+    ) {
+
+        label =
+            "違算なし";
+
+    } else if (
+        result.difference > 0
+    ) {
+
+        label =
+            "レジが多い";
+
+    } else {
+
+        label =
+            "レジが不足";
+
+    }
+
+
+    container.innerHTML = `
+
+        <h3>
+            レジ締め結果
+        </h3>
+
+        <p>
+            締め日時：
+            ${
+                new Date(
+                    result.date
+                ).toLocaleString(
+                    "ja-JP"
+                )
+            }
+        </p>
+
+        <p>
+            理論レジ金：
+            <strong>
+                ${yen(
+                    result.theoretical
+                )}
+            </strong>
+        </p>
+
+        <p>
+            実査金額：
+            <strong>
+                ${yen(
+                    result.actual
+                )}
+            </strong>
+        </p>
+
+        <p
+            class="${className}"
+        >
+
+            違算：
+
+            <strong>
+
+                ${
+                    result.difference >= 0
+                        ? "+"
+                        : ""
+                }
+
+                ${yen(
+                    result.difference
+                )}
+
+            </strong>
+
+            （${label}）
+
+        </p>
+
+    `;
+
+}
+
+
+/* =====================================================
+   CSV
+===================================================== */
+
+function csvEscape(
+    value
+) {
+
+    const string =
+        String(
+            value ?? ""
+        );
+
+
+    if (
+        string.includes(",") ||
+        string.includes('"') ||
+        string.includes("\n")
+    ) {
+
+        return (
+            '"' +
+            string.replaceAll(
+                '"',
+                '""'
+            ) +
+            '"'
+        );
+
+    }
+
+
+    return string;
+
+}
+
+
+function exportCSV() {
+
+    if (
+        state.sales.length === 0
+    ) {
+
+        alert(
+            "出力する会計データがありません。"
+        );
+
+        return;
+
+    }
+
+
+    const rows = [
+
+        [
+            "会計ID",
+            "日時",
+            "商品",
+            "数量",
+            "単価",
+            "小計（割引後）",
+            "商品割引額",
+            "合計",
+            "受取金額",
+            "おつり",
+            "取消"
+        ]
+
+    ];
+
+
+    state.sales.forEach(
+        sale => {
+
+            sale.items.forEach(
+                item => {
+
+                    rows.push([
+
+                        sale.id,
+
+                        new Date(
+                            sale.date
+                        ).toLocaleString(
+                            "ja-JP"
+                        ),
+
+                        item.name,
+
+                        item.quantity,
+
+                        item.price,
+
+                        item.subtotal,
+
+                        item.discount || 0,
+
+                        sale.total,
+
+                        sale.received,
+
+                        sale.change,
+
+                        sale.cancelled
+                            ? "取消"
+                            : ""
+
+                    ]);
+
+                }
+            );
+
+        }
+    );
+
+
+    const csv =
+        "\uFEFF" +
+        rows
+            .map(
+                row =>
+                    row
+                        .map(
+                            csvEscape
+                        )
+                        .join(",")
+            )
+            .join("\r\n");
+
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    const date =
+        new Date()
+            .toISOString()
+            .slice(0,10);
+
+
+    link.download =
+        `大学祭売上_${date}.csv`;
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+/* =====================================================
+   確認ダイアログ
+===================================================== */
+
+function openConfirm(
+    title,
+    message,
+    action
+) {
+
+    document.getElementById(
+        "confirmModalTitle"
+    ).textContent =
+        title;
+
+
+    document.getElementById(
+        "confirmModalMessage"
+    ).innerHTML =
+        message;
+
+
+    confirmAction =
+        action;
+
+
+    const button =
+        document.getElementById(
+            "confirmModalButton"
+        );
+
+
+    button.onclick =
+        function() {
+
+            /*
+               先に実行する関数を退避。
+
+               これをしないと
+               closeConfirmModal() によって
+               confirmAction が null になり、
+               削除・会計確定などが
+               実行されなくなる。
+            */
+
+            const actionToRun =
+                confirmAction;
+
+
+            closeConfirmModal();
+
+
+            if (
+                typeof actionToRun ===
+                "function"
+            ) {
+
+                actionToRun();
+
+            }
+
+        };
+
+
+    document.getElementById(
+        "confirmModal"
+    ).classList.add(
+        "show"
+    );
+
+}
+
+
+function closeConfirmModal() {
+
+    document.getElementById(
+        "confirmModal"
+    ).classList.remove(
+        "show"
+    );
+
+
+    confirmAction =
+        null;
+
+}
+
+
+/* =====================================================
+   ESCキー
+===================================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (
+            event.key !==
+            "Escape"
+        ) {
+
+            return;
+
+        }
+
+
+        const confirmModal =
+            document.getElementById(
+                "confirmModal"
+            );
+
+
+        const editModal =
+            document.getElementById(
+                "editProductModal"
+            );
+
+
+        if (
+            confirmModal.classList.contains(
+                "show"
+            )
+        ) {
+
+            closeConfirmModal();
+
+            return;
+
+        }
+
+
+        if (
+            editModal.classList.contains(
+                "show"
+            )
+        ) {
+
+            closeEditProductModal();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   起動
+===================================================== */
+
+init();
+
+</script>
+
+</body>
+
+</html>
